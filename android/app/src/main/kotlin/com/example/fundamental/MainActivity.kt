@@ -1,4 +1,4 @@
-package com.example.newsly
+package com.example.fundamental
 
 import io.flutter.embedding.android.FlutterActivity
 
