@@ -11,7 +11,7 @@ class ApiService {
   Future<List<Article>> getNews() async {
     // Menyusun URL menggunakan variabel dari .env
     // Kita tambahkan query parameter secara dinamis
-    final String fullUrl = "$baseUrl?q=tesla&apiKey=$apiKey";
+    final String fullUrl = "${baseUrl.trim()}?q=tesla&apiKey=${apiKey.trim()}";
 
     try {
       final response = await http.get(Uri.parse(fullUrl));
