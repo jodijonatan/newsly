@@ -25,7 +25,7 @@ A modern Flutter application for browsing and reading news articles. Built with 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/newsly.git
+   git clone https://github.com/jodijonatan/newsly.git
    cd newsly
    ```
 
