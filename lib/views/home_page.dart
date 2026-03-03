@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/news_model.dart';
+import '../providers/news_provider.dart';
 import 'widgets/news_card.dart';
 import '../views/widgets/news_shimmer.dart';
+import 'bookmarks_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -29,12 +32,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final newsProvider = Provider.of<NewsProvider>(context);
+
     return DefaultTabController(
       length: _categories.length,
       child: Scaffold(
-        backgroundColor: const Color(
-          0xFFF8F9FA,
-        ), // Warna background sangat soft
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
@@ -43,17 +46,43 @@ class _HomePageState extends State<HomePage> {
                 pinned: true,
                 snap: true,
                 centerTitle: false,
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
                 elevation: innerBoxIsScrolled ? 0.5 : 0,
-                title: const Text(
+                title: Text(
                   "Newsly.",
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Theme.of(context).appBarTheme.foregroundColor,
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -1,
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      newsProvider.isDarkMode
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      color: Theme.of(context).appBarTheme.foregroundColor,
+                    ),
+                    onPressed: () => newsProvider.toggleTheme(),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.bookmarks_rounded,
+                      color: Theme.of(context).appBarTheme.foregroundColor,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BookmarksPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(110),
                   child: Column(
@@ -67,28 +96,39 @@ class _HomePageState extends State<HomePage> {
                         child: Container(
                           height: 45,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F3F5),
+                            color: newsProvider.isDarkMode
+                                ? Colors.grey[900]
+                                : const Color(0xFFF1F3F5),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: TextField(
                             controller: _searchController,
+                            style: TextStyle(
+                              color: newsProvider.isDarkMode
+                                  ? Colors.white
+                                  : Colors.black,
+                            ),
                             onSubmitted: (value) {
                               setState(() {
                                 _searchQuery = value;
                               });
                             },
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: "Search news, topics...",
                               hintStyle: TextStyle(
-                                color: Colors.grey,
+                                color: newsProvider.isDarkMode
+                                    ? Colors.grey[500]
+                                    : Colors.grey,
                                 fontSize: 14,
                               ),
                               border: InputBorder.none,
                               prefixIcon: Icon(
                                 Icons.search_rounded,
-                                color: Colors.black54,
+                                color: newsProvider.isDarkMode
+                                    ? Colors.grey[400]
+                                    : Colors.black54,
                               ),
-                              contentPadding: EdgeInsets.symmetric(
+                              contentPadding: const EdgeInsets.symmetric(
                                 vertical: 10,
                               ),
                             ),
@@ -102,7 +142,9 @@ class _HomePageState extends State<HomePage> {
                         indicatorWeight: 3,
                         indicatorSize: TabBarIndicatorSize.label,
                         labelColor: Colors.blueAccent,
-                        unselectedLabelColor: Colors.grey[500],
+                        unselectedLabelColor: newsProvider.isDarkMode
+                            ? Colors.grey[500]
+                            : Colors.grey[500],
                         labelStyle: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,

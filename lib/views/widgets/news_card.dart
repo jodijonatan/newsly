@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../../models/news_model.dart';
+import '../../providers/news_provider.dart';
+import '../news_detail_page.dart';
 
 class NewsCard extends StatelessWidget {
   final Article article;
 
   const NewsCard({Key? key, required this.article}) : super(key: key);
 
-  Future<void> _launchURL() async {
-    final Uri url = Uri.parse(article.url);
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      throw 'Could not launch $url';
-    }
+  void _navigateToDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NewsDetailPage(article: article),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final newsProvider = Provider.of<NewsProvider>(context);
+    final isBookmarked = newsProvider.isBookmarked(article.url);
+
     return GestureDetector(
-      onTap: _launchURL,
+      onTap: () => _navigateToDetail(context),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -76,10 +83,10 @@ class NewsCard extends StatelessWidget {
                     // Judul Berita
                     Text(
                       article.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A1A),
+                        color: Theme.of(context).textTheme.titleLarge?.color,
                         height: 1.3,
                         letterSpacing: -0.5,
                       ),
@@ -125,6 +132,15 @@ class NewsCard extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
+                        IconButton(
+                          icon: Icon(
+                            isBookmarked
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            color: isBookmarked ? Colors.blueAccent : Colors.grey,
+                          ),
+                          onPressed: () => newsProvider.toggleBookmark(article),
+                        ),
                         Icon(
                           Icons.arrow_forward_rounded,
                           size: 20,
