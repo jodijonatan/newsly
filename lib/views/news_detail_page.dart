@@ -7,7 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/news_model.dart';
 import '../providers/news_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import '../services/gemini_service.dart';
 import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NewsDetailPage extends StatefulWidget {
   final Article article;
@@ -20,6 +23,66 @@ class NewsDetailPage extends StatefulWidget {
 
 class _NewsDetailPageState extends State<NewsDetailPage> {
   bool _isListening = false;
+  String? _aiSummary;
+  String? _aiExplanation;
+  String _sentiment = "NEUTRAL";
+  bool _isLoadingAI = true;
+  late FlutterTts _flutterTts;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTTS();
+    _fetchAIData();
+  }
+
+  void _initTTS() {
+    _flutterTts = FlutterTts();
+    _flutterTts.setCompletionHandler(() {
+      setState(() => _isListening = false);
+    });
+  }
+
+  Future<void> _fetchAIData() async {
+    try {
+      final textToAnalyze = "${widget.article.title} ${widget.article.description ?? ''} ${widget.article.content ?? ''}";
+      
+      final results = await Future.wait([
+        GeminiService.getSummary(textToAnalyze),
+        GeminiService.getSimplifiedExplanation(textToAnalyze),
+        GeminiService.analyzeSentiment(widget.article.title),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _aiSummary = results[0];
+          _aiExplanation = results[1];
+          _sentiment = results[2];
+          _isLoadingAI = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingAI = false);
+      }
+    }
+  }
+
+  void _toggleTTS() async {
+    if (_isListening) {
+      await _flutterTts.stop();
+    } else {
+      final textToRead = "${widget.article.title}. ${widget.article.description ?? ''}. ${widget.article.content ?? ''}";
+      await _flutterTts.speak(textToRead);
+    }
+    setState(() => _isListening = !_isListening);
+  }
+
+  @override
+  void dispose() {
+    _flutterTts.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +231,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: GlassmorphicContainer(
           width: double.infinity,
-          height: 180,
+          height: 220,
           borderRadius: 24,
           blur: 20,
           alignment: Alignment.center,
@@ -207,15 +270,26 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                         letterSpacing: 2,
                       ),
                     ),
+                    const Spacer(),
+                    if (_isLoadingAI)
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  "• This article explores the latest advancements in AI technology.\n• Key takeaways include improved efficiency and new integration patterns.\n• Experts suggest a 40% growth in the sector over the next 3 years.",
-                  style: TextStyle(
-                    color: AppColors.textHigh,
-                    height: 1.6,
-                    fontSize: 13,
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _aiSummary ?? (_isLoadingAI ? "Analyzing article..." : "AI Summary not available."),
+                      style: TextStyle(
+                        color: AppColors.textHigh,
+                        height: 1.6,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -254,7 +328,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              "In short, AI is getting smarter and will help us do our jobs faster and better by automating repetitive tasks and providing smarter insights.",
+              _aiExplanation ?? (_isLoadingAI ? "Simplifying..." : "Full article required for deep analysis."),
               style: TextStyle(color: AppColors.textMed, height: 1.6),
             ),
           ],
@@ -264,22 +338,39 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
   }
 
   Widget _buildSentimentBadge() {
+    Color badgeColor;
+    IconData badgeIcon;
+    
+    switch (_sentiment) {
+      case "POSITIVE":
+        badgeColor = AppColors.positive;
+        badgeIcon = Icons.trending_up;
+        break;
+      case "NEGATIVE":
+        badgeColor = Colors.redAccent;
+        badgeIcon = Icons.trending_down;
+        break;
+      default:
+        badgeColor = AppColors.neonCyan;
+        badgeIcon = Icons.trending_flat;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.positive.withOpacity(0.2),
+        color: badgeColor.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.positive.withOpacity(0.4)),
+        border: Border.all(color: badgeColor.withOpacity(0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.trending_up, color: AppColors.positive, size: 14),
+          Icon(badgeIcon, color: badgeColor, size: 14),
           const SizedBox(width: 6),
           Text(
-            "POSITIVE SENTIMENT",
-            style: const TextStyle(
-              color: AppColors.positive,
+            "$_sentiment SENTIMENT",
+            style: TextStyle(
+              color: badgeColor,
               fontSize: 10,
               fontWeight: FontWeight.w900,
               letterSpacing: 1,
@@ -331,7 +422,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                   color: AppColors.neonPurple,
                   size: 32,
                 ),
-                onPressed: () => setState(() => _isListening = !_isListening),
+                onPressed: _toggleTTS,
               ),
             ],
           ),

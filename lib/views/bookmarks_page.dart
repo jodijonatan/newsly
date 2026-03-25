@@ -16,10 +16,7 @@ class BookmarksPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textHigh),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false, // Menghapus back button karena sekarang Tab
         title: Text(
           "SAVED STORIES",
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(

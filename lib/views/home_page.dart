@@ -8,6 +8,7 @@ import '../providers/news_provider.dart';
 import 'widgets/futuristic_card.dart';
 import 'widgets/news_shimmer.dart';
 import 'bookmarks_page.dart';
+import 'settings_page.dart';
 import '../theme/app_theme.dart';
 
 
@@ -23,6 +24,15 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = "General";
   int _currentIndex = 0;
+  bool _isSearching = false;
+
+  void _onSearch(String query) {
+    if (query.trim().isEmpty) {
+      setState(() => _isSearching = false);
+    } else {
+      setState(() => _isSearching = true);
+    }
+  }
 
   final List<String> _categories = [
     "General",
@@ -37,12 +47,33 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.darkBg,
       body: Stack(
         children: [
-          _buildMainContent(),
+          IndexedStack(
+            index: _currentIndex,
+            children: [
+              _buildMainContent(),
+              _buildExploreContent(),
+              const BookmarksPage(),
+              const SettingsPage(),
+            ],
+          ),
           _buildBottomNav(),
         ],
       ),
+    );
+  }
+
+  Widget _buildExploreContent() {
+    return CustomScrollView(
+      slivers: [
+        _buildAppBar(),
+        _buildSectionTitle("Explore Categories"),
+        _buildCategoryChips(),
+        _buildVerticalFeed(),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ],
     );
   }
 
@@ -66,26 +97,52 @@ class _HomePageState extends State<HomePage> {
       floating: true,
       pinned: false,
       backgroundColor: Colors.transparent,
-      title: Text(
-        "Newsly.",
-        style: Theme.of(context).textTheme.displayLarge?.copyWith(
-              fontSize: 24,
-              foreground: Paint()
-                ..shader = const LinearGradient(
-                  colors: AppColors.primaryGradient,
-                ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+      title: _isSearching
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: const TextStyle(color: AppColors.textHigh),
+              decoration: const InputDecoration(
+                hintText: "Search news...",
+                hintStyle: TextStyle(color: AppColors.textLow),
+                border: InputBorder.none,
+              ),
+              onChanged: _onSearch,
+              onSubmitted: _onSearch,
+            )
+          : Text(
+              "Newsly.",
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                    fontSize: 24,
+                    foreground: Paint()
+                      ..shader = const LinearGradient(
+                        colors: AppColors.primaryGradient,
+                      ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+                  ),
             ),
-      ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.search_rounded, color: AppColors.textHigh),
-          onPressed: () {},
+          icon: Icon(
+            _isSearching ? Icons.close_rounded : Icons.search_rounded,
+            color: AppColors.textHigh,
+          ),
+          onPressed: () {
+            setState(() {
+              if (_isSearching) {
+                _searchController.clear();
+                _isSearching = false;
+              } else {
+                _isSearching = true;
+              }
+            });
+          },
         ),
-        const CircleAvatar(
-          radius: 16,
-          backgroundColor: AppColors.cardDark,
-          child: Icon(Icons.person_outline, size: 20, color: AppColors.neonCyan),
-        ),
+        if (!_isSearching)
+          const CircleAvatar(
+            radius: 16,
+            backgroundColor: AppColors.cardDark,
+            child: Icon(Icons.person_outline, size: 20, color: AppColors.neonCyan),
+          ),
         const SizedBox(width: 16),
       ],
     );
@@ -263,7 +320,10 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildVerticalFeed() {
     return FutureBuilder<List<Article>>(
-      future: client.getNews(category: _selectedCategory.toLowerCase()),
+      future: client.getNews(
+        query: _isSearching ? _searchController.text : "",
+        category: _isSearching ? "" : _selectedCategory.toLowerCase(),
+      ),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return SliverList(
@@ -327,35 +387,29 @@ class _HomePageState extends State<HomePage> {
   Widget _navItem(IconData icon, int index) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
-      onTap: () {
-        setState(() => _currentIndex = index);
-        if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const BookmarksPage()),
-          );
-        }
-      },
-      child: AnimatedContainer(
-        duration: 300.ms,
-        padding: const EdgeInsets.all(12),
-        decoration: isSelected
-            ? BoxDecoration(
+      onTap: () => setState(() => _currentIndex = index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppColors.neonCyan : AppColors.textLow,
+            size: isSelected ? 30 : 24,
+          ).animate(target: isSelected ? 1 : 0).scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2)),
+          if (isSelected)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: AppColors.neonCyan,
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(colors: AppColors.primaryGradient),
                 boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGradient[0].withOpacity(0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
+                  BoxShadow(color: AppColors.neonCyan, blurRadius: 8, spreadRadius: 2),
                 ],
-              )
-            : null,
-        child: Icon(
-          icon,
-          color: isSelected ? Colors.white : AppColors.textLow,
-        ),
+              ),
+            ),
+        ],
       ),
     );
   }
