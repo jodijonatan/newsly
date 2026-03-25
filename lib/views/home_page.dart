@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:glassmorphism/glassmorphism.dart';
 import '../services/api_service.dart';
 import '../models/news_model.dart';
 import '../providers/news_provider.dart';
-import 'widgets/news_card.dart';
-import '../views/widgets/news_shimmer.dart';
+import 'widgets/futuristic_card.dart';
+import 'widgets/news_shimmer.dart';
 import 'bookmarks_page.dart';
+import '../theme/app_theme.dart';
+
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -17,8 +21,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ApiService client = ApiService();
   final TextEditingController _searchController = TextEditingController();
-
-  String _searchQuery = "";
+  String _selectedCategory = "General";
+  int _currentIndex = 0;
 
   final List<String> _categories = [
     "General",
@@ -32,196 +36,326 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final newsProvider = Provider.of<NewsProvider>(context);
+    return Scaffold(
+      body: Stack(
+        children: [
+          _buildMainContent(),
+          _buildBottomNav(),
+        ],
+      ),
+    );
+  }
 
-    return DefaultTabController(
-      length: _categories.length,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverAppBar(
-                floating: true,
-                pinned: true,
-                snap: true,
-                centerTitle: false,
-                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-                elevation: innerBoxIsScrolled ? 0.5 : 0,
-                title: Text(
-                  "Newsly.",
-                  style: TextStyle(
-                    color: Theme.of(context).appBarTheme.foregroundColor,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                  ),
+  Widget _buildMainContent() {
+    return CustomScrollView(
+      slivers: [
+        _buildAppBar(),
+        _buildHeroSection(),
+        _buildCategoryChips(),
+        _buildSectionTitle("Quick Reads"),
+        _buildQuickReads(),
+        _buildSectionTitle("For You"),
+        _buildVerticalFeed(),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ],
+    );
+  }
+
+  Widget _buildAppBar() {
+    return SliverAppBar(
+      floating: true,
+      pinned: false,
+      backgroundColor: Colors.transparent,
+      title: Text(
+        "Newsly.",
+        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+              fontSize: 24,
+              foreground: Paint()
+                ..shader = const LinearGradient(
+                  colors: AppColors.primaryGradient,
+                ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+            ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search_rounded, color: AppColors.textHigh),
+          onPressed: () {},
+        ),
+        const CircleAvatar(
+          radius: 16,
+          backgroundColor: AppColors.cardDark,
+          child: Icon(Icons.person_outline, size: 20, color: AppColors.neonCyan),
+        ),
+        const SizedBox(width: 16),
+      ],
+    );
+  }
+
+  Widget _buildHeroSection() {
+    return SliverToBoxAdapter(
+      child: FutureBuilder<List<Article>>(
+        future: client.getNews(category: "general"),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const NewsShimmer();
+          }
+          return FuturisticCard(
+            article: snapshot.data![0],
+            isLarge: true,
+          ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips() {
+    return SliverToBoxAdapter(
+      child: Container(
+        height: 60,
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _categories.length,
+          itemBuilder: (context, index) {
+            final isSelected = _selectedCategory == _categories[index];
+            return GestureDetector(
+              onTap: () => setState(() => _selectedCategory = _categories[index]),
+              child: AnimatedContainer(
+                duration: 300.ms,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? const LinearGradient(colors: AppColors.primaryGradient)
+                      : null,
+                  color: isSelected ? null : AppColors.cardDark,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryGradient[0].withOpacity(0.4),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          )
+                        ]
+                      : [],
                 ),
-                actions: [
-                  IconButton(
-                    icon: Icon(
-                      newsProvider.isDarkMode
-                          ? Icons.light_mode_rounded
-                          : Icons.dark_mode_rounded,
-                      color: Theme.of(context).appBarTheme.foregroundColor,
+                child: Center(
+                  child: Text(
+                    _categories[index],
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textMed,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
-                    onPressed: () => newsProvider.toggleTheme(),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.bookmarks_rounded,
-                      color: Theme.of(context).appBarTheme.foregroundColor,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BookmarksPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(110),
-                  child: Column(
-                    children: [
-                      // Modern Search Bar
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Container(
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: newsProvider.isDarkMode
-                                ? Colors.grey[900]
-                                : const Color(0xFFF1F3F5),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            style: TextStyle(
-                              color: newsProvider.isDarkMode
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
-                            onSubmitted: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: "Search news, topics...",
-                              hintStyle: TextStyle(
-                                color: newsProvider.isDarkMode
-                                    ? Colors.grey[500]
-                                    : Colors.grey,
-                                fontSize: 14,
-                              ),
-                              border: InputBorder.none,
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
-                                color: newsProvider.isDarkMode
-                                    ? Colors.grey[400]
-                                    : Colors.black54,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Custom Tab Bar
-                      TabBar(
-                        isScrollable: true,
-                        indicatorColor: Colors.blueAccent,
-                        indicatorWeight: 3,
-                        indicatorSize: TabBarIndicatorSize.label,
-                        labelColor: Colors.blueAccent,
-                        unselectedLabelColor: newsProvider.isDarkMode
-                            ? Colors.grey[500]
-                            : Colors.grey[500],
-                        labelStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                        unselectedLabelStyle: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 15,
-                        ),
-                        tabs: _categories.map((c) => Tab(text: c)).toList(),
-                        onTap: (index) {
-                          setState(() {
-                            _searchQuery = "";
-                            _searchController.clear();
-                          });
-                        },
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ];
+            );
           },
-          body: TabBarView(
-            children: _categories.map((cat) {
-              return FutureBuilder<List<Article>>(
-                future: _searchQuery.isNotEmpty
-                    ? client.getNews(query: _searchQuery)
-                    : client.getNews(category: cat.toLowerCase()),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return ListView.builder(
-                      itemCount: 5, // Tampilkan 5 kartu skeleton saat loading
-                      padding: const EdgeInsets.only(top: 8),
-                      itemBuilder: (context, index) => const NewsShimmer(),
-                    );
-                  }
-
-                  if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(top: 8),
-                      itemCount: snapshot.data!.length,
-                      itemBuilder: (context, index) =>
-                          NewsCard(article: snapshot.data![index]),
-                    );
-                  }
-
-                  return _buildEmptyState();
-                },
-              );
-            }).toList(),
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.auto_stories_outlined, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text(
-            "No news found",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+  Widget _buildSectionTitle(String title) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+        child: Row(
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontSize: 18,
+                    letterSpacing: 1,
+                  ),
             ),
+            const Spacer(),
+            Text(
+              "See All",
+              style: TextStyle(
+                color: AppColors.neonCyan,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickReads() {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 180,
+        child: FutureBuilder<List<Article>>(
+          future: client.getNews(category: "technology"),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: 3,
+                itemBuilder: (context, index) => Container(
+                  width: 140,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardDark,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              );
+            }
+            return ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                final article = snapshot.data![index];
+                return Container(
+                  width: 140,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: article.urlToImage != null
+                        ? DecorationImage(
+                            image: NetworkImage(article.urlToImage!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    color: AppColors.cardDark,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.8),
+                        ],
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      article.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: (index * 100).ms).scale(begin: const Offset(0.9, 0.9));
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalFeed() {
+    return FutureBuilder<List<Article>>(
+      future: client.getNews(category: _selectedCategory.toLowerCase()),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => const NewsShimmer(),
+              childCount: 3,
+            ),
+          );
+        }
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => FuturisticCard(article: snapshot.data![index]),
+            childCount: snapshot.data!.length,
           ),
-          const SizedBox(height: 8),
-          Text(
-            "Try a different keyword or category",
-            style: TextStyle(color: Colors.grey[500]),
-          ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Positioned(
+      bottom: 20,
+      left: 20,
+      right: 20,
+      child: GlassmorphicContainer(
+        width: double.infinity,
+        height: 70,
+        borderRadius: 35,
+        blur: 20,
+        alignment: Alignment.center,
+        border: 2,
+        linearGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
+          ],
+        ),
+        borderGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.neonCyan.withOpacity(0.5),
+            AppColors.neonPurple.withOpacity(0.5),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navItem(Icons.home_rounded, 0),
+            _navItem(Icons.grid_view_rounded, 1),
+            _navItem(Icons.bookmarks_rounded, 2),
+            _navItem(Icons.settings_rounded, 3),
+          ],
+        ),
+      ),
+    ).animate().slideY(begin: 1, duration: 800.ms, curve: Curves.easeOutBack);
+  }
+
+  Widget _navItem(IconData icon, int index) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _currentIndex = index);
+        if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const BookmarksPage()),
+          );
+        }
+      },
+      child: AnimatedContainer(
+        duration: 300.ms,
+        padding: const EdgeInsets.all(12),
+        decoration: isSelected
+            ? BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(colors: AppColors.primaryGradient),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGradient[0].withOpacity(0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              )
+            : null,
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : AppColors.textLow,
+        ),
       ),
     );
   }

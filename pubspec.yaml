@@ -37,6 +37,12 @@ dependencies:
   google_fonts: ^6.1.0 # Untuk tipografi Inter/Poppins yang modern
   shimmer: ^3.0.0 # Untuk efek loading "tulang" yang keren
   share_plus: ^7.1.0 # (Opsional) Jika ingin menambah fitur share berita
+  flutter_animate: ^4.5.0 # Animasi fluida
+  font_awesome_flutter: ^10.7.0 # Icon modern
+  cached_network_image: ^3.3.1 # Caching image
+  intl: ^0.19.0 # Formatting date
+  glassmorphism: ^3.0.0 # Efek kaca
+  animations: ^2.0.11 # Transisi halaman
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

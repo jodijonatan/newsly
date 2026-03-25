@@ -25,6 +25,9 @@ class Article extends HiveObject {
   @HiveField(6)
   final String? content;
 
+  @HiveField(7)
+  final String? sourceName;
+
   Article({
     required this.title,
     this.description,
@@ -33,6 +36,7 @@ class Article extends HiveObject {
     this.author,
     this.publishedAt,
     this.content,
+    this.sourceName,
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
@@ -44,6 +48,7 @@ class Article extends HiveObject {
       author: json['author'],
       publishedAt: json['publishedAt'],
       content: json['content'],
+      sourceName: json['source'] != null ? json['source']['name'] : null,
     );
   }
 
@@ -56,6 +61,7 @@ class Article extends HiveObject {
       'author': author,
       'publishedAt': publishedAt,
       'content': content,
+      'sourceName': sourceName,
     };
   }
 }

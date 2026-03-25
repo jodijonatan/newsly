@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/news_provider.dart';
-import 'widgets/news_card.dart';
+import 'widgets/futuristic_card.dart';
+import '../theme/app_theme.dart';
 
 class BookmarksPage extends StatelessWidget {
-  const BookmarksPage({Key? key}) : super(key: key);
+  const BookmarksPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,14 +14,18 @@ class BookmarksPage extends StatelessWidget {
     final bookmarks = newsProvider.bookmarks;
 
     return Scaffold(
+      backgroundColor: AppColors.darkBg,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textHigh),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "My Bookmarks",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          "SAVED STORIES",
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontSize: 18,
+                letterSpacing: 2,
+              ),
         ),
       ),
       body: bookmarks.isEmpty
@@ -27,29 +33,31 @@ class BookmarksPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   Icon(Icons.bookmark_border_rounded, size: 80, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
+                   Icon(Icons.bookmark_border_rounded, size: 80, color: AppColors.textLow),
+                  const SizedBox(height: 24),
                   Text(
-                    "No bookmarks yet",
+                    "Vault is empty",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+                      color: AppColors.textHigh,
+                      letterSpacing: 1,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
-                    "Articles you save will appear here",
-                    style: TextStyle(color: Colors.grey[500]),
+                    "Stories you encrypt for later\nwill appear in this terminal.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textMed, height: 1.5),
                   ),
                 ],
-              ),
+              ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.1),
             )
           : ListView.builder(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 16, bottom: 40),
               itemCount: bookmarks.length,
               itemBuilder: (context, index) =>
-                  NewsCard(article: bookmarks[index]),
+                  FuturisticCard(article: bookmarks[index]),
             ),
     );
   }
