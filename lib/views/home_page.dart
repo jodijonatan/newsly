@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:glassmorphism/glassmorphism.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../services/api_service.dart';
 import '../models/news_model.dart';
-import '../providers/news_provider.dart';
 import 'widgets/futuristic_card.dart';
 import 'widgets/news_shimmer.dart';
 import 'bookmarks_page.dart';
 import 'settings_page.dart';
 import '../theme/app_theme.dart';
-
+import 'news_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,13 +25,10 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   bool _isSearching = false;
 
-  void _onSearch(String query) {
-    if (query.trim().isEmpty) {
-      setState(() => _isSearching = false);
-    } else {
-      setState(() => _isSearching = true);
-    }
-  }
+  // Cached futures to prevent re-fetching on every setState
+  late Future<List<Article>> _heroFuture;
+  late Future<List<Article>> _quickReadsFuture;
+  late Future<List<Article>> _feedFuture;
 
   final List<String> _categories = [
     "General",
@@ -43,6 +39,55 @@ class _HomePageState extends State<HomePage> {
     "Science",
     "Entertainment",
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _heroFuture = client.getNews(category: "general");
+    _quickReadsFuture = client.getNews(category: "technology");
+    _feedFuture = client.getNews(category: _selectedCategory.toLowerCase());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onCategoryChanged(String category) {
+    setState(() {
+      _selectedCategory = category;
+      _isSearching = false;
+      _searchController.clear();
+      _feedFuture = client.getNews(category: category.toLowerCase());
+    });
+  }
+
+  void _onSearch(String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _feedFuture =
+            client.getNews(category: _selectedCategory.toLowerCase());
+      });
+    } else {
+      setState(() {
+        _isSearching = true;
+        _feedFuture = client.getNews(query: query);
+      });
+    }
+  }
+
+  void _refreshAll() {
+    setState(() {
+      _heroFuture = client.getNews(category: "general");
+      _quickReadsFuture = client.getNews(category: "technology");
+      _feedFuture = client.getNews(
+        query: _isSearching ? _searchController.text : "",
+        category: _isSearching ? "" : _selectedCategory.toLowerCase(),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,29 +111,39 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildExploreContent() {
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(),
-        _buildSectionTitle("Explore Categories"),
-        _buildCategoryChips(),
-        _buildVerticalFeed(),
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
-      ],
+    return RefreshIndicator(
+      color: AppColors.neonCyan,
+      backgroundColor: AppColors.cardDark,
+      onRefresh: () async => _refreshAll(),
+      child: CustomScrollView(
+        slivers: [
+          _buildAppBar(),
+          _buildSectionTitle("Explore Categories"),
+          _buildCategoryChips(),
+          _buildVerticalFeed(),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
     );
   }
 
   Widget _buildMainContent() {
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(),
-        _buildHeroSection(),
-        _buildCategoryChips(),
-        _buildSectionTitle("Quick Reads"),
-        _buildQuickReads(),
-        _buildSectionTitle("For You"),
-        _buildVerticalFeed(),
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
-      ],
+    return RefreshIndicator(
+      color: AppColors.neonCyan,
+      backgroundColor: AppColors.cardDark,
+      onRefresh: () async => _refreshAll(),
+      child: CustomScrollView(
+        slivers: [
+          _buildAppBar(),
+          _buildHeroSection(),
+          _buildCategoryChips(),
+          _buildSectionTitle("Quick Reads"),
+          _buildQuickReads(),
+          _buildSectionTitle("For You"),
+          _buildVerticalFeed(),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
     );
   }
 
@@ -107,7 +162,6 @@ class _HomePageState extends State<HomePage> {
                 hintStyle: TextStyle(color: AppColors.textLow),
                 border: InputBorder.none,
               ),
-              onChanged: _onSearch,
               onSubmitted: _onSearch,
             )
           : Text(
@@ -117,7 +171,8 @@ class _HomePageState extends State<HomePage> {
                     foreground: Paint()
                       ..shader = const LinearGradient(
                         colors: AppColors.primaryGradient,
-                      ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+                      ).createShader(
+                          const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
                   ),
             ),
       actions: [
@@ -131,6 +186,8 @@ class _HomePageState extends State<HomePage> {
               if (_isSearching) {
                 _searchController.clear();
                 _isSearching = false;
+                _feedFuture = client.getNews(
+                    category: _selectedCategory.toLowerCase());
               } else {
                 _isSearching = true;
               }
@@ -141,7 +198,8 @@ class _HomePageState extends State<HomePage> {
           const CircleAvatar(
             radius: 16,
             backgroundColor: AppColors.cardDark,
-            child: Icon(Icons.person_outline, size: 20, color: AppColors.neonCyan),
+            child: Icon(Icons.person_outline,
+                size: 20, color: AppColors.neonCyan),
           ),
         const SizedBox(width: 16),
       ],
@@ -151,8 +209,15 @@ class _HomePageState extends State<HomePage> {
   Widget _buildHeroSection() {
     return SliverToBoxAdapter(
       child: FutureBuilder<List<Article>>(
-        future: client.getNews(category: "general"),
+        future: _heroFuture,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _buildErrorWidget(
+              "Gagal memuat berita utama",
+              onRetry: () =>
+                  setState(() => _heroFuture = client.getNews(category: "general")),
+            );
+          }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const NewsShimmer();
           }
@@ -177,21 +242,24 @@ class _HomePageState extends State<HomePage> {
           itemBuilder: (context, index) {
             final isSelected = _selectedCategory == _categories[index];
             return GestureDetector(
-              onTap: () => setState(() => _selectedCategory = _categories[index]),
+              onTap: () => _onCategoryChanged(_categories[index]),
               child: AnimatedContainer(
                 duration: 300.ms,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
                   gradient: isSelected
-                      ? const LinearGradient(colors: AppColors.primaryGradient)
+                      ? const LinearGradient(
+                          colors: AppColors.primaryGradient)
                       : null,
                   color: isSelected ? null : AppColors.cardDark,
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: AppColors.primaryGradient[0].withOpacity(0.4),
+                            color:
+                                AppColors.primaryGradient[0].withOpacity(0.4),
                             blurRadius: 15,
                             offset: const Offset(0, 8),
                           )
@@ -203,7 +271,8 @@ class _HomePageState extends State<HomePage> {
                     _categories[index],
                     style: TextStyle(
                       color: isSelected ? Colors.white : AppColors.textMed,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -229,7 +298,7 @@ class _HomePageState extends State<HomePage> {
                   ),
             ),
             const Spacer(),
-            Text(
+            const Text(
               "See All",
               style: TextStyle(
                 color: AppColors.neonCyan,
@@ -248,8 +317,16 @@ class _HomePageState extends State<HomePage> {
       child: SizedBox(
         height: 180,
         child: FutureBuilder<List<Article>>(
-          future: client.getNews(category: "technology"),
+          future: _quickReadsFuture,
           builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Gagal memuat Quick Reads",
+                  style: TextStyle(color: AppColors.textMed),
+                ),
+              );
+            }
             if (!snapshot.hasData) {
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
@@ -271,45 +348,63 @@ class _HomePageState extends State<HomePage> {
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final article = snapshot.data![index];
-                return Container(
-                  width: 140,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: article.urlToImage != null
-                        ? DecorationImage(
-                            image: NetworkImage(article.urlToImage!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    color: AppColors.cardDark,
+                return GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 500),
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          NewsDetailPage(article: article),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(
+                            opacity: animation, child: child);
+                      },
+                    ),
                   ),
                   child: Container(
+                    width: 140,
+                    margin: const EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.8),
-                        ],
+                      image: article.urlToImage != null
+                          ? DecorationImage(
+                              image: CachedNetworkImageProvider(
+                                  article.urlToImage!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                      color: AppColors.cardDark,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.8),
+                          ],
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        article.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    padding: const EdgeInsets.all(12),
-                    alignment: Alignment.bottomLeft,
-                    child: Text(
-                      article.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ).animate().fadeIn(delay: (index * 100).ms).scale(begin: const Offset(0.9, 0.9));
+                  ).animate()
+                      .fadeIn(delay: (index * 100).ms)
+                      .scale(begin: const Offset(0.9, 0.9)),
+                );
               },
             );
           },
@@ -320,11 +415,24 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildVerticalFeed() {
     return FutureBuilder<List<Article>>(
-      future: client.getNews(
-        query: _isSearching ? _searchController.text : "",
-        category: _isSearching ? "" : _selectedCategory.toLowerCase(),
-      ),
+      future: _feedFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return SliverToBoxAdapter(
+            child: _buildErrorWidget(
+              "Gagal memuat berita",
+              onRetry: () {
+                setState(() {
+                  _feedFuture = client.getNews(
+                    query: _isSearching ? _searchController.text : "",
+                    category:
+                        _isSearching ? "" : _selectedCategory.toLowerCase(),
+                  );
+                });
+              },
+            ),
+          );
+        }
         if (!snapshot.hasData) {
           return SliverList(
             delegate: SliverChildBuilderDelegate(
@@ -333,13 +441,82 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         }
+        if (snapshot.data!.isEmpty) {
+          return SliverToBoxAdapter(
+            child: _buildEmptyWidget(
+              _isSearching
+                  ? "Tidak ada hasil untuk \"${_searchController.text}\""
+                  : "Tidak ada berita untuk kategori ini",
+            ),
+          );
+        }
         return SliverList(
           delegate: SliverChildBuilderDelegate(
-            (context, index) => FuturisticCard(article: snapshot.data![index]),
+            (context, index) =>
+                FuturisticCard(article: snapshot.data![index]),
             childCount: snapshot.data!.length,
           ),
         );
       },
+    );
+  }
+
+  Widget _buildErrorWidget(String message, {VoidCallback? onRetry}) {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.redAccent),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(
+                color: AppColors.textHigh, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded,
+                  color: AppColors.neonCyan, size: 18),
+              label: const Text("Coba Lagi",
+                  style: TextStyle(color: AppColors.neonCyan)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.neonCyan),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyWidget(String message) {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_off_rounded, size: 48, color: AppColors.textLow),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(color: AppColors.textMed, fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -395,7 +572,10 @@ class _HomePageState extends State<HomePage> {
             icon,
             color: isSelected ? AppColors.neonCyan : AppColors.textLow,
             size: isSelected ? 30 : 24,
-          ).animate(target: isSelected ? 1 : 0).scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2)),
+          )
+              .animate(target: isSelected ? 1 : 0)
+              .scale(
+                  begin: const Offset(1, 1), end: const Offset(1.2, 1.2)),
           if (isSelected)
             Container(
               margin: const EdgeInsets.only(top: 4),
@@ -405,7 +585,10 @@ class _HomePageState extends State<HomePage> {
                 color: AppColors.neonCyan,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: AppColors.neonCyan, blurRadius: 8, spreadRadius: 2),
+                  BoxShadow(
+                      color: AppColors.neonCyan,
+                      blurRadius: 8,
+                      spreadRadius: 2),
                 ],
               ),
             ),

@@ -1,11 +1,21 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/news_model.dart';
 
+/// Custom exception for API errors with status code context.
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+  ApiException(this.message, {this.statusCode});
+
+  @override
+  String toString() => 'ApiException($statusCode): $message';
+}
+
 class ApiService {
   String get apiKey => dotenv.get('API_KEY', fallback: '');
-  // Pastikan BASE_URL di .env adalah: https://newsapi.org/v2
   String get baseUrl =>
       dotenv.get('BASE_URL', fallback: 'https://newsapi.org/v2');
 
@@ -13,34 +23,39 @@ class ApiService {
     String category = 'general',
     String query = '',
   }) async {
-    String url = "";
+    String url;
 
-    // Logika: Jika ada query, gunakan /everything. Jika tidak, gunakan /top-headlines
     if (query.trim().isNotEmpty) {
-      url =
-          "$baseUrl/everything?q=${Uri.encodeComponent(query)}&apiKey=$apiKey";
+      url = "$baseUrl/everything?q=${Uri.encodeComponent(query)}";
     } else {
-      // Pastikan category tidak kosong untuk top-headlines
       String cat = category.isEmpty ? 'general' : category;
-      url = "$baseUrl/top-headlines?country=us&category=$cat&apiKey=$apiKey";
+      url = "$baseUrl/top-headlines?country=us&category=$cat";
     }
 
-    print("Fetching URL: $url"); // Untuk memantau di Debug Console
+    if (kDebugMode) {
+      debugPrint("Fetching URL: $url");
+    }
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'X-Api-Key': apiKey},
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         Map<String, dynamic> json = jsonDecode(response.body);
         List<dynamic> body = json['articles'] ?? [];
         return body.map((item) => Article.fromJson(item)).toList();
       } else {
-        print("Server Error: ${response.body}");
-        throw ("Gagal mengambil data: ${response.statusCode}");
+        throw ApiException(
+          "Gagal mengambil data",
+          statusCode: response.statusCode,
+        );
       }
+    } on ApiException {
+      rethrow;
     } catch (e) {
-      print("Exception: $e");
-      throw ("Terjadi kesalahan koneksi");
+      throw ApiException("Terjadi kesalahan koneksi: $e");
     }
   }
 }

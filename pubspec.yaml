@@ -32,27 +32,20 @@ dependencies:
     sdk: flutter
   http: ^1.1.0
   flutter_dotenv: ^5.1.0
-  url_launcher: ^6.2.6
 
-  google_fonts: ^6.1.0 # Untuk tipografi Inter/Poppins yang modern
-  shimmer: ^3.0.0 # Untuk efek loading "tulang" yang keren
-  share_plus: ^7.1.0 # (Opsional) Jika ingin menambah fitur share berita
-  flutter_animate: ^4.5.0 # Animasi fluida
-  font_awesome_flutter: ^10.7.0 # Icon modern
-  cached_network_image: ^3.3.1 # Caching image
-  intl: ^0.19.0 # Formatting date
-  google_generative_ai: ^0.4.5 # Untuk fitur AI (Summary, Explain Simply)
-  flutter_tts: ^4.2.2 # Untuk fitur Audio
-  glassmorphism: ^3.0.0 # Efek kaca
-  animations: ^2.0.11 # Transisi halaman
+  google_fonts: ^6.1.0
+  shimmer: ^3.0.0
+  share_plus: ^7.1.0
+  flutter_animate: ^4.5.0
+  cached_network_image: ^3.3.1
+  google_generative_ai: ^0.4.5
+  flutter_tts: ^4.2.2
+  glassmorphism: ^3.0.0
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  flutter_inappwebview: ^6.1.5
   path_provider: ^2.1.5
 
 dev_dependencies:

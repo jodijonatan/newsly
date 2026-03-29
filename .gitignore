@@ -34,6 +34,8 @@ migrate_working_dir/
 /build/
 .env*
 
+analyze_output.txt
+
 # Symbolication related
 app.*.symbols
 

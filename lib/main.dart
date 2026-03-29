@@ -40,13 +40,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final newsProvider = Provider.of<NewsProvider>(context);
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Newsly',
-      themeMode: newsProvider.isDarkMode ? ThemeMode.dark : ThemeMode.dark, // Default to dark
-      theme: AppTheme.darkTheme, // Futuristic look
+      themeMode: ThemeMode.dark,
+      theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       home: const HomePage(),
     );

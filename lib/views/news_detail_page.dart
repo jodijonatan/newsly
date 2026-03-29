@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/gemini_service.dart';
 import '../theme/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class NewsDetailPage extends StatefulWidget {
   final Article article;
@@ -39,14 +38,15 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
   void _initTTS() {
     _flutterTts = FlutterTts();
     _flutterTts.setCompletionHandler(() {
-      setState(() => _isListening = false);
+      if (mounted) setState(() => _isListening = false);
     });
   }
 
   Future<void> _fetchAIData() async {
     try {
-      final textToAnalyze = "${widget.article.title} ${widget.article.description ?? ''} ${widget.article.content ?? ''}";
-      
+      final textToAnalyze =
+          "${widget.article.title} ${widget.article.description ?? ''} ${widget.article.content ?? ''}";
+
       final results = await Future.wait([
         GeminiService.getSummary(textToAnalyze),
         GeminiService.getSimplifiedExplanation(textToAnalyze),
@@ -72,10 +72,27 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
     if (_isListening) {
       await _flutterTts.stop();
     } else {
-      final textToRead = "${widget.article.title}. ${widget.article.description ?? ''}. ${widget.article.content ?? ''}";
+      final textToRead =
+          "${widget.article.title}. ${widget.article.description ?? ''}. ${widget.article.content ?? ''}";
       await _flutterTts.speak(textToRead);
     }
-    setState(() => _isListening = !_isListening);
+    if (mounted) setState(() => _isListening = !_isListening);
+  }
+
+  /// Compute relative time from publishedAt string.
+  String _getRelativeTime() {
+    final raw = widget.article.publishedAt;
+    if (raw == null || raw.isEmpty) return "Unknown time";
+    try {
+      final published = DateTime.parse(raw);
+      final diff = DateTime.now().difference(published);
+      if (diff.inDays > 0) return "${diff.inDays}d ago";
+      if (diff.inHours > 0) return "${diff.inHours}h ago";
+      if (diff.inMinutes > 0) return "${diff.inMinutes}m ago";
+      return "Just now";
+    } catch (_) {
+      return raw;
+    }
   }
 
   @override
@@ -116,7 +133,8 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
       leading: IconButton(
         icon: const CircleAvatar(
           backgroundColor: Colors.black26,
-          child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+          child: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 18, color: Colors.white),
         ),
         onPressed: () => Navigator.pop(context),
       ),
@@ -158,12 +176,13 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                   const SizedBox(height: 12),
                   Text(
                     widget.article.title,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 26,
-                          height: 1.2,
-                        ),
+                    style:
+                        Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 26,
+                              height: 1.2,
+                            ),
                   ).animate().fadeIn(duration: 600.ms).slideY(begin: 0.1),
                 ],
               ),
@@ -184,7 +203,8 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.source_outlined, size: 16, color: AppColors.neonCyan),
+                const Icon(Icons.source_outlined,
+                    size: 16, color: AppColors.neonCyan),
                 const SizedBox(width: 8),
                 Text(
                   widget.article.sourceName ?? "Unknown Source",
@@ -195,25 +215,30 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.access_time, size: 16, color: AppColors.textLow),
+                const Icon(Icons.access_time,
+                    size: 16, color: AppColors.textLow),
                 const SizedBox(width: 4),
                 Text(
-                  "2 hours ago",
-                  style: TextStyle(color: AppColors.textLow, fontSize: 12),
+                  _getRelativeTime(),
+                  style:
+                      const TextStyle(color: AppColors.textLow, fontSize: 12),
                 ),
               ],
             ).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 24),
-            Text(
-              widget.article.description ?? "",
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textHigh,
-                  ),
-            ).animate().fadeIn(delay: 300.ms),
+            if (widget.article.description != null &&
+                widget.article.description!.isNotEmpty)
+              Text(
+                widget.article.description!,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textHigh,
+                    ),
+              ).animate().fadeIn(delay: 300.ms),
             const SizedBox(height: 16),
             Text(
-              "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+              widget.article.content ??
+                  "Konten lengkap tidak tersedia dari sumber. Silakan baca artikel asli menggunakan tombol di bawah.",
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppColors.textMed,
                     height: 1.8,
@@ -259,7 +284,8 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: Colors.amber, size: 20),
+                    const Icon(Icons.auto_awesome,
+                        color: Colors.amber, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       "AI SUMMARY",
@@ -275,7 +301,8 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                       const SizedBox(
                         width: 12,
                         height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.amber),
                       ),
                   ],
                 ),
@@ -283,8 +310,11 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Text(
-                      _aiSummary ?? (_isLoadingAI ? "Analyzing article..." : "AI Summary not available."),
-                      style: TextStyle(
+                      _aiSummary ??
+                          (_isLoadingAI
+                              ? "Analyzing article..."
+                              : "AI Summary not available."),
+                      style: const TextStyle(
                         color: AppColors.textHigh,
                         height: 1.6,
                         fontSize: 13,
@@ -328,8 +358,11 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              _aiExplanation ?? (_isLoadingAI ? "Simplifying..." : "Full article required for deep analysis."),
-              style: TextStyle(color: AppColors.textMed, height: 1.6),
+              _aiExplanation ??
+                  (_isLoadingAI
+                      ? "Simplifying..."
+                      : "Full article required for deep analysis."),
+              style: const TextStyle(color: AppColors.textMed, height: 1.6),
             ),
           ],
         ),
@@ -340,7 +373,7 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
   Widget _buildSentimentBadge() {
     Color badgeColor;
     IconData badgeIcon;
-    
+
     switch (_sentiment) {
       case "POSITIVE":
         badgeColor = AppColors.positive;
@@ -395,7 +428,10 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
           alignment: Alignment.center,
           border: 1,
           linearGradient: LinearGradient(
-            colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+            colors: [
+              Colors.white.withOpacity(0.1),
+              Colors.white.withOpacity(0.05)
+            ],
           ),
           borderGradient: const LinearGradient(
             colors: AppColors.primaryGradient,
@@ -405,20 +441,42 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
             children: [
               IconButton(
                 icon: Icon(
-                  isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                  isBookmarked
+                      ? Icons.bookmark_rounded
+                      : Icons.bookmark_outline_rounded,
                   color: isBookmarked ? AppColors.neonCyan : Colors.white,
                 ),
-                onPressed: () => newsProvider.toggleBookmark(widget.article),
+                onPressed: () {
+                  newsProvider.toggleBookmark(widget.article);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isBookmarked
+                            ? "Bookmark dihapus"
+                            : "Ditambahkan ke bookmark",
+                      ),
+                      backgroundColor: AppColors.cardDark,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.share_rounded, color: Colors.white),
                 onPressed: () {
-                  Share.share("${widget.article.title}\n${widget.article.url}");
+                  Share.share(
+                      "${widget.article.title}\n${widget.article.url}");
                 },
               ),
               IconButton(
                 icon: Icon(
-                  _isListening ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                  _isListening
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_filled,
                   color: AppColors.neonPurple,
                   size: 32,
                 ),
@@ -428,6 +486,8 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
           ),
         ),
       ),
-    ).animate().slideY(begin: 1.0, duration: 800.ms, curve: Curves.easeOutBack);
+    )
+        .animate()
+        .slideY(begin: 1.0, duration: 800.ms, curve: Curves.easeOutBack);
   }
 }

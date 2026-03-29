@@ -13,6 +13,7 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text(
           "SETTINGS",
           style: GoogleFonts.orbitron(
@@ -25,14 +26,6 @@ class SettingsPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _buildSectionHeader("Account"),
-          _buildSettingsTile(
-            icon: Icons.person_outline,
-            title: "Profile",
-            subtitle: "Manage your personal data",
-            trailing: const Icon(Icons.chevron_right, color: AppColors.textLow),
-          ),
-          const SizedBox(height: 20),
           _buildSectionHeader("Appearance"),
           _buildSettingsTile(
             icon: Icons.dark_mode_outlined,
@@ -40,7 +33,7 @@ class SettingsPage extends StatelessWidget {
             subtitle: "Always active for futuristic feel",
             trailing: Switch(
               value: true,
-              onChanged: (v) {},
+              onChanged: null, // Disabled: dark-only by design
               activeColor: AppColors.neonCyan,
             ),
           ),
@@ -49,17 +42,13 @@ class SettingsPage extends StatelessWidget {
           _buildSettingsTile(
             icon: Icons.auto_awesome_outlined,
             title: "AI Analysis",
-            subtitle: "Summarize news in real-time",
-            trailing: Switch(
-              value: true,
-              onChanged: (v) {},
-              activeColor: AppColors.neonPurple,
-            ),
+            subtitle: "Powered by Google Gemini",
+            trailing: const Icon(Icons.chevron_right, color: AppColors.textLow),
           ),
           _buildSettingsTile(
             icon: Icons.record_voice_over_outlined,
             title: "TTS Voice",
-            subtitle: "Choose your preferred narrator",
+            subtitle: "Text-to-Speech for article reading",
             trailing: const Icon(Icons.chevron_right, color: AppColors.textLow),
           ),
           const SizedBox(height: 20),
@@ -67,10 +56,9 @@ class SettingsPage extends StatelessWidget {
           _buildSettingsTile(
             icon: Icons.info_outline,
             title: "Version",
-            subtitle: "Newsly v2.0.0-beta",
+            subtitle: "Newsly v1.0.0",
           ),
           const SizedBox(height: 40),
-          _buildLogoutButton(),
         ],
       ),
     );
@@ -107,10 +95,16 @@ class SettingsPage extends StatelessWidget {
         alignment: Alignment.center,
         border: 1,
         linearGradient: LinearGradient(
-          colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)],
+          colors: [
+            Colors.white.withOpacity(0.05),
+            Colors.white.withOpacity(0.02)
+          ],
         ),
         borderGradient: LinearGradient(
-          colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+          colors: [
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05)
+          ],
         ),
         child: ListTile(
           leading: Container(
@@ -123,34 +117,14 @@ class SettingsPage extends StatelessWidget {
           ),
           title: Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textHigh),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: AppColors.textHigh),
           ),
           subtitle: Text(
             subtitle,
-            style: TextStyle(fontSize: 12, color: AppColors.textMed),
+            style: const TextStyle(fontSize: 12, color: AppColors.textMed),
           ),
           trailing: trailing,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton() {
-    return Container(
-      width: double.infinity,
-      height: 55,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
-      ),
-      child: Center(
-        child: Text(
-          "LOGOUT",
-          style: GoogleFonts.orbitron(
-            color: Colors.redAccent,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
-          ),
         ),
       ),
     );

@@ -1,84 +1,111 @@
-# Newsly
+# 🚀 Newsly: Masa Depan Membaca Berita
 
-A modern Flutter application for browsing and reading news articles. Built with Material Design 3, Newsly provides a sleek and intuitive interface to stay updated with the latest news from various sources.
+[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![Gemini AI](https://img.shields.io/badge/Gemini%20AI-8E75B2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
-## Features
+**Newsly** adalah aplikasi baca berita modern yang dirancang untuk memberikan pengalaman membaca yang imersif, cerdas, dan futuristik. Bukan sekadar agregator berita biasa, Newsly menggabungkan kekuatan **AI Generatif** dengan desain **Glassmorphism** yang premium.
 
-- **News Fetching**: Retrieve real-time news articles from reliable APIs.
-- **Card-Based UI**: Display news in visually appealing cards for easy browsing.
-- **Shimmer Loading**: Smooth loading animations for a better user experience.
-- **Sharing**: Share news articles directly from the app.
-- **URL Launching**: Open articles in external browsers.
-- **Modern Design**: Utilizes Material 3 design principles with Google Fonts for a professional look.
-- **Environment Configuration**: Secure API key management using environment variables.
+---
 
-## Installation
+## ✨ Fitur Unggulan
 
-### Prerequisites
+### 🤖 Kecerdasan Buatan (AI-Powered)
+*   **Ringkasan Otomatis**: Dapatkan poin-poin penting dari berita panjang dalam sekejap menggunakan Google Gemini AI.
+*   **Jelaskan Sederhana**: Fitur "Explain Simply" membantu Anda memahami topik kompleks dengan bahasa yang lebih mudah dimengerti.
+*   **Analisis Sentimen**: Ketahui suasana berita sebelum Anda membacanya.
 
-- Flutter SDK (^3.8.1)
-- Dart SDK
-- Android Studio or VS Code with Flutter extensions
+### 🎧 Pengalaman Multimedia
+*   **Audio Reading (TTS)**: Sedang sibuk? Biarkan Newsly membacakan berita untuk Anda dengan teknologi *Text-to-Speech* yang jernih.
+*   **In-App WebView**: Baca artikel lengkap tanpa meninggalkan aplikasi dengan navigasi yang mulus.
 
-### Setup
+### 🎨 Desain Futuristik
+*   **Antarmuka Glassmorphism**: Visual modern dengan efek kaca yang elegan dan transparan.
+*   **Animasi Fluida**: Transisi halaman dan interaksi yang halus menggunakan *Flutter Animate*.
+*   **Dark Mode First**: Dirancang untuk kenyamanan mata dengan estetika gelap yang premium.
 
-1. Clone the repository:
+### 📚 Fitur Lainnya
+*   **Markah Buku (Bookmarks)**: Simpan berita favorit Anda secara lokal menggunakan Hive.
+*   **Berbagi Berita**: Bagikan informasi penting ke teman-teman Anda dengan satu ketukan.
+*   **Shimmer Loading**: Pengalaman memuat data yang estetik dan tidak membosankan.
 
-   ```bash
-   git clone https://github.com/jodijonatan/newsly.git
-   cd newsly
-   ```
+---
 
-2. Install dependencies:
+## 🛠️ Teknologi yang Digunakan
 
-   ```bash
-   flutter pub get
-   ```
+| Kategori | Teknologi |
+| :--- | :--- |
+| **Framework** | Flutter (Dart) |
+| **AI Integration** | Google Generative AI (Gemini) |
+| **State Management** | Provider |
+| **Database Lokal** | Hive |
+| **UI/UX** | Glassmorphism, Google Fonts, Flutter Animate, Shimmer |
+| **Networking** | HTTP, Flutter Dotenv |
 
-3. Create a `.env` file in the root directory and add your API key:
+---
 
-   ```
-   NEWS_API_KEY=your_api_key_here
-   ```
+## 🚀 Cara Menjalankan Proyek
 
-4. Run the app:
-   ```bash
-   flutter run
-   ```
+### Prasyarat
+*   Flutter SDK (^3.8.1)
+*   Dart SDK
+*   Editor: VS Code atau Android Studio
+*   API Key dari [NewsAPI](https://newsapi.org/) dan [Google AI Studio](https://aistudio.google.com/)
 
-## Usage
+### Langkah-langkah Instalasi
 
-- Launch the app on your device or emulator.
-- Browse through the latest news articles on the home page.
-- Tap on a news card to read more or share the article.
+1.  **Clone Repositori**
+    ```bash
+    git clone https://github.com/jodijonatan/newsly.git
+    cd newsly
+    ```
 
-## Dependencies
+2.  **Instal Dependensi**
+    ```bash
+    flutter pub get
+    ```
 
-- `flutter`: The Flutter framework.
-- `http`: For making HTTP requests to fetch news data.
-- `flutter_dotenv`: To load environment variables securely.
-- `url_launcher`: To open URLs in external browsers.
-- `google_fonts`: For modern typography.
-- `shimmer`: For loading animations.
-- `share_plus`: For sharing functionality.
-- `cupertino_icons`: For iOS-style icons.
+3.  **Konfigurasi Environment**
+    Buat file `.env` di direktori *root* dan masukkan API Key Anda:
+    ```env
+    NEWS_API_KEY=isi_dengan_newsapi_key_anda
+    GEMINI_API_KEY=isi_dengan_gemini_api_key_anda
+    ```
 
-## Contributing
+4.  **Jalankan Aplikasi**
+    ```bash
+    flutter run
+    ```
 
-Contributions are welcome! Please follow these steps:
+---
 
-1. Fork the repository.
-2. Create a new branch for your feature (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+## 📸 Tampilan Aplikasi
+*(Tambahkan screenshot atau GIF di sini)*
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 🤝 Kontribusi
 
-## Acknowledgments
+Kontribusi selalu terbuka! Jika Anda memiliki ide untuk meningkatkan Newsly, silakan:
+1. Fork proyek ini.
+2. Buat branch fitur baru (`git checkout -b feature/FiturKeren`).
+3. Commit perubahan Anda (`git commit -m 'Menambahkan Fitur Keren'`).
+4. Push ke branch tersebut (`git push origin feature/FiturKeren`).
+5. Buat Pull Request.
 
-- Built with Flutter and Dart.
-- News data provided by [NewsAPI](https://newsapi.org/) or similar services.
-- Icons and fonts from Google Fonts and Material Icons.
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah **MIT License**. Lihat info selengkapnya di file [LICENSE](LICENSE).
+
+---
+
+## 🌟 Ucapan Terima Kasih
+
+*   [NewsAPI](https://newsapi.org/) untuk penyediaan data berita.
+*   Tim [Flutter](https://flutter.dev) untuk framework yang luar biasa.
+*   [Google DeepMind](https://deepmind.google/) untuk teknologi Gemini AI.
+
+---
+*Dibuat dengan ❤️ oleh [Jodi Jonatan](https://github.com/jodijonatan)*
